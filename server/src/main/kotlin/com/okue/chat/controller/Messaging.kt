@@ -9,7 +9,13 @@ import com.okue.controller.SendMsgReply
 import com.okue.controller.SendMsgRequest
 import com.okue.controller.User
 import io.grpc.stub.StreamObserver
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 import org.lognet.springboot.grpc.GRpcService
+import redis.clients.jedis.Jedis
+import redis.clients.jedis.JedisPubSub
 
 // NOTE
 // https://github.com/LogNet/grpc-spring-boot-starter
@@ -19,6 +25,10 @@ import org.lognet.springboot.grpc.GRpcService
 
 @GRpcService
 class Messaging : MessagingGrpc.MessagingImplBase() {
+    companion object
+
+    val jedis = Jedis()
+
     override fun sendMsg(request: SendMsgRequest, responseObserver: StreamObserver<SendMsgReply>) {
         val msg = request.msg
         println("from ${msg.from}, to ${msg.to}, content ${msg.content}")
@@ -46,9 +56,28 @@ class Messaging : MessagingGrpc.MessagingImplBase() {
             .newBuilder()
             .setMsg(msg)
             .build()
-        repeat(3) {
-            responseObserver.onNext(reply)
+
+        val ch = Channel<String>()
+
+        GlobalScope.async {
+            jedis.subscribe(Subscriber(ch), "hoge")
         }
-        responseObserver.onCompleted()
+
+        GlobalScope.launch {
+            for (m in ch) {
+                responseObserver.onNext(reply)
+            }
+        }
+        // responseObserver.onCompleted()
+    }
+
+    inner class Subscriber(val ch: Channel<String>) : JedisPubSub() {
+        override fun onMessage(channel: String, message: String) {
+            println(this)
+            println("get message '${message}' at the channel ${channel}")
+            GlobalScope.async {
+                ch.send(message)
+            }
+        }
     }
 }
