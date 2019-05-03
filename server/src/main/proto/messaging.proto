@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.okue.controller";
+option java_outer_classname = "MessagingProto";
+option objc_class_prefix = "HLW";
+
+package messaging;
+
+// The greeting service definition.
+service Messaging {
+  // Send a message
+  rpc sendMsg (SendMsgRequest) returns (SendMsgReply) {}
+
+  // Receive messages
+  rpc receiveMsgs (ReceiveMsgsRequest) returns (stream ReceiveMsgsReply) {}
+}
+
+// ----------------------------------------------------------------------------
+
+message User {
+    string name = 1;
+}
+
+message Msg {
+    User from = 1;
+    User to = 2;
+    string content = 3;
+}
+
+message Reply {
+    enum Result{
+        Ok = 0;
+        Err = 1;
+    };
+    Result result = 1;
+    string reason = 2;
+}
+
+// ----------------------------------------------------------------------------
+
+message SendMsgRequest {
+    User user = 1;
+    Msg msg = 2;
+}
+
+message SendMsgReply {
+    Reply reply = 1;
+}
+
+message ReceiveMsgsRequest {
+    User user = 1;
+}
+
+message ReceiveMsgsReply {
+    Msg msg = 1;
+}
