@@ -1,0 +1,33 @@
+html {
+  height: 100%;
+}
+body {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  font-family: "ヒラギノ角ゴpro W3";
+}
+h3 { font-family: "ヒラギノ角ゴpro W3"; }
+h4 { font-family: "ヒラギノ角ゴpro W3"; }
+.content {
+  flex: 1;
+}
+.tableHeader {
+    font-size: 16px;
+    color: #FFF;
+    margin: 0;
+    padding: 7px 10px;
+    background: #1a1a1a;
+    position: relative;
+}
+.iframe-content {
+    position: relative;
+    padding: 56.25% 0 0 0;
+}
+.iframe-inquiry {
+    position: relative;
+    padding: 750px 0 0 0;
+}
+.mouse-hand {
+    cursor: pointer;
+}
