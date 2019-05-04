@@ -28,12 +28,12 @@ message Msg {
     string content = 3;
 }
 
-message Reply {
-    enum Result{
+message Result {
+    enum Status {
         Ok = 0;
         Err = 1;
     };
-    Result result = 1;
+    Status status = 1;
     string reason = 2;
 }
 
@@ -45,7 +45,7 @@ message SendMsgRequest {
 }
 
 message SendMsgReply {
-    Reply reply = 1;
+    Result result = 1;
 }
 
 message ReceiveMsgsRequest {

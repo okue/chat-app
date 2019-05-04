@@ -4,10 +4,9 @@ import com.okue.controller.MessagingGrpc
 import com.okue.controller.Msg
 import com.okue.controller.ReceiveMsgsReply
 import com.okue.controller.ReceiveMsgsRequest
-import com.okue.controller.Reply
+import com.okue.controller.Result
 import com.okue.controller.SendMsgReply
 import com.okue.controller.SendMsgRequest
-import com.okue.controller.User
 import io.grpc.stub.StreamObserver
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
@@ -22,61 +21,64 @@ import redis.clients.jedis.JedisPubSub
 
 // NOTE for grpcc
 // client.receiveMsgs({user : { name : "fuga" }}).on('data', sr).on('status', sr)
+// client.sendMsg({ user: { name: "fuga" }, msg: { from: { name : "fuga" }, to: { name : "aaa" }, content: "sakana_wa_yaku" } }, pr)
 
 @GRpcService
 class Messaging : MessagingGrpc.MessagingImplBase() {
-    companion object
 
-    val jedis = Jedis()
+    val BROADCAST = "broadcast"
 
     override fun sendMsg(request: SendMsgRequest, responseObserver: StreamObserver<SendMsgReply>) {
-        val msg = request.msg
-        println("from ${msg.from}, to ${msg.to}, content ${msg.content}")
-        val reply = Reply
+        println("${request.msg}")
+
+        val jedis = Jedis()
+        val r = Result
             .newBuilder()
-            .setResult(Reply.Result.Ok)
+            .setStatus(Result.Status.Ok)
             .setReason("")
             .build()
-        val reply2 = SendMsgReply
+        val reply = SendMsgReply
             .newBuilder()
-            .setReply(reply)
+            .setResult(r)
             .build()
-        responseObserver.onNext(reply2)
+        GlobalScope.launch {
+            jedis.publish(BROADCAST.toByteArray(), request.msg.toByteArray())
+        }
+        responseObserver.onNext(reply)
         responseObserver.onCompleted()
     }
 
     override fun receiveMsgs(request: ReceiveMsgsRequest, responseObserver: StreamObserver<ReceiveMsgsReply>) {
+        val jedis = Jedis()
         val user = request.user
         println("user ${user.name}")
-        val msg = Msg
-            .newBuilder()
-            .setFrom(User.newBuilder().setName("sakana"))
-            .setTo(User.newBuilder().setName("misoyaki"))
-        val reply = ReceiveMsgsReply
-            .newBuilder()
-            .setMsg(msg)
-            .build()
 
-        val ch = Channel<String>()
+        val ch = Channel<ByteArray>()
 
         GlobalScope.async {
-            jedis.subscribe(Subscriber(ch), "hoge")
+            jedis.subscribe(Subscriber(ch), BROADCAST)
         }
 
         GlobalScope.launch {
             for (m in ch) {
+                println("get message")
+
+                val reply = ReceiveMsgsReply
+                    .newBuilder()
+                    .setMsg(Msg.parseFrom(m))
+                    .build()
+
                 responseObserver.onNext(reply)
             }
         }
         // responseObserver.onCompleted()
     }
 
-    inner class Subscriber(val ch: Channel<String>) : JedisPubSub() {
+    inner class Subscriber(val ch : Channel<ByteArray>) : JedisPubSub() {
         override fun onMessage(channel: String, message: String) {
             println(this)
-            println("get message '${message}' at the channel ${channel}")
-            GlobalScope.async {
-                ch.send(message)
+            GlobalScope.launch {
+                ch.send(message.toByteArray())
             }
         }
     }
