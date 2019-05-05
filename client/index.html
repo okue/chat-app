@@ -10,13 +10,13 @@
   </head>
   <body>
     <script>
-        var app = Elm.Main.init({});
-        app.ports.putLS.subscribe(function(arg){
-            localStorage.setItem(
-                arg[0],
-                JSON.stringify(arg[1])
-            );
-        });
+        var app = Elm.Main.init({})
+        app.ports.sendMsg.subscribe(function(arg){
+            const from = arg[0]
+            const to = arg[1]
+            const content = arg[2]
+            console.log(from, to, content)
+        })
     </script>
   </body>
 </html>

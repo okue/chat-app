@@ -38,7 +38,7 @@ import Tuple exposing (first, second)
 -------------------------------------------------------------------------------
 
 
-port putLS : ( String, List Int ) -> Cmd msg
+port sendMsg : ( String, String, String ) -> Cmd msg
 
 
 
@@ -132,7 +132,9 @@ update msg model =
                 newMsg =
                     { from = "todo_change", to = model.currentTo, content = model.currentContent }
             in
-            ( { model | currentTo = "", currentContent = "", messagesList = newMsg :: model.messagesList }, Cmd.none )
+            ( { model | currentTo = "", currentContent = "", messagesList = newMsg :: model.messagesList }
+            , sendMsg ( "todo_change", model.currentTo, model.currentContent )
+            )
 
         ClickedDelete i ->
             ( model, Cmd.none )
