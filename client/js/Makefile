@@ -1,2 +1,4 @@
+TARGET=../main.js
+
 compile:
-	npx webpack client.js -o ../main_grpc.js
+	npx webpack client.js -o ${TARGET}

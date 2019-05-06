@@ -1,5 +1,5 @@
 OUTPUT=./
-JS=${OUTPUT}/main_elm.js
+JS=${OUTPUT}/elm.js
 CSS=assets/style.css
 OPT=make --optimize Main.elm --output=${JS}
 

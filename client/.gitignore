@@ -4,5 +4,5 @@ output/*
 *-e
 feed/rss.xml
 
-main_elm.js
-main_grpc.js
+elm.js
+main.js

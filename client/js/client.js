@@ -7,6 +7,14 @@ const { MessagingClient } = require('./messaging_grpc_web_pb.js');
 const grpc = {};
 grpc.web = require('grpc-web');
 
+var app = Elm.Main.init({})
+app.ports.sendMsg.subscribe(function(arg){
+    const from = arg[0]
+    const to = arg[1]
+    const content = arg[2]
+    console.log(from, to, content)
+})
+
 const request = new SendMsgRequest();
 const msg = new Msg();
 const user = new User();
