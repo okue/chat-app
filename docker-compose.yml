@@ -1,0 +1,18 @@
+version: "3"
+services:
+  proxy:
+    build: ./proxy
+    ports:
+      - "8081:8081"
+    links:
+      - "server"
+    container_name: "proxy"
+
+  server:
+    build: ./server
+    volumes:
+      - ./server:/app
+    ports:
+      - "6565:6565"
+      - "8080:8080"
+    container_name: "server"
