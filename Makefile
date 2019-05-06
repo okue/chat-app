@@ -5,9 +5,11 @@ STATIC_DIR=./server/src/main/resources/static/
 build: client server 
 	docker-compose build
 
+up: run
 run:
 	docker-compose up
 
+down: stop
 stop:
 	docker-compose down
 

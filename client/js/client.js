@@ -42,7 +42,7 @@ request2.setUser(user)
 
 const stream = client.receiveMsgs(request2, null)
 stream.on('data', function(response) {
-    console.log(response.getMessage())
+    console.log(response.getMsg())
 })
 stream.on('status', function(status) {
     console.log(status.code)
