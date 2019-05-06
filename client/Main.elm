@@ -41,6 +41,9 @@ import Tuple exposing (first, second)
 port sendMsg : ( String, String, String ) -> Cmd msg
 
 
+port receiveMsgs : (Message -> msg) -> Sub msg
+
+
 
 -------------------------------------------------------------------------------
 --                               Types
@@ -59,6 +62,7 @@ type Msg
     | ChangedContent String
     | ClickedPost
     | ClickedDelete Id
+    | ReceiveMsgs Message
 
 
 type alias Flags =
@@ -139,10 +143,19 @@ update msg model =
         ClickedDelete i ->
             ( model, Cmd.none )
 
+        ReceiveMsgs m ->
+            let
+                newMsg =
+                    { from = m.from, to = m.to, content = m.content }
+            in
+            ( { model | messagesList = newMsg :: model.messagesList }
+            , Cmd.none
+            )
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    receiveMsgs ReceiveMsgs
 
 
 
