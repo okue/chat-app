@@ -1,7 +1,8 @@
+include ../.env
 OUTPUT=./
-JS=${OUTPUT}/elm.js
-CSS=assets/style.css
+JS=${OUTPUT}/${ELMJS}
 OPT=make --optimize Main.elm --output=${JS}
+# CSS=assets/style.css
 
 build: compile genProto grpcJs
 

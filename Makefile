@@ -1,4 +1,5 @@
 .PHONY: server client
+include .env
 STATIC_DIR=./server/src/main/resources/static/
 
 build: client server 
@@ -13,8 +14,8 @@ stop:
 client:
 	make -C client build
 	cp client/index.html   ${STATIC_DIR}
-	cp client/main_elm.js  ${STATIC_DIR}
-	cp client/main_grpc.js ${STATIC_DIR}
+	cp client/${ELMJS}  ${STATIC_DIR}
+	cp client/${MAINJS} ${STATIC_DIR}
 
 server:
 	cd server/ && ./gradlew build
