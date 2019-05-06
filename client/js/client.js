@@ -9,22 +9,24 @@ grpc.web = require('grpc-web')
 
 const client = new MessagingClient('http://'+window.location.hostname+':8081', null, null)
 
+// random string
+const myname = 'web-client-' + Math.random().toString(36).slice(-8)
+
 // Elm -------------------------------------------------------------------------
 
 var app = Elm.Main.init({})
 app.ports.sendMsg.subscribe(function(arg){
     // gRPC sendMsg
-    const fromName = arg[0]
     const toName = arg[1]
     const content = arg[2]
-    console.log(fromName, toName, content)
+    console.log(toName, content)
 
     const request = new SendMsgRequest()
     const msg = new Msg()
     const user = new User()
     const to = new User()
 
-    user.setName(fromName)
+    user.setName(myname)
     to.setName(toName)
     msg.setFrom(user)
     msg.setTo(to)
@@ -43,7 +45,7 @@ app.ports.sendMsg.subscribe(function(arg){
 // gRPC receiveMsgs
 const request2 = new ReceiveMsgsRequest()
 const user = new User()
-user.setName("web-client-1")
+user.setName(myname)
 request2.setUser(user)
 
 const stream = client.receiveMsgs(request2, null)
