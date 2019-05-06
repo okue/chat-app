@@ -4,15 +4,18 @@ services:
     build: ./proxy
     ports:
       - "8081:8081"
-    links:
-      - "server"
+    # links:
+    #   - "server"
+    extra_hosts:
+    # FIXME
+    - "server:192.168.1.6"
     container_name: "proxy"
 
-  server:
-    build: ./server
-    volumes:
-      - ./server:/app
-    ports:
-      - "6565:6565"
-      - "8080:8080"
-    container_name: "server"
+  # server:
+  #   build: ./server
+  #   volumes:
+  #     - ./server:/app
+  #   ports:
+  #     - "6565:6565"
+  #     - "8080:8080"
+  #   container_name: "server"
