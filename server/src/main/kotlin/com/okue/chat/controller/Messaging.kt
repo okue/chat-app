@@ -27,11 +27,12 @@ import redis.clients.jedis.JedisPubSub
 class Messaging : MessagingGrpc.MessagingImplBase() {
 
     val BROADCAST = "broadcast"
+    val REDIS_HOST = "redis_dev"
 
     override fun sendMsg(request: SendMsgRequest, responseObserver: StreamObserver<SendMsgReply>) {
         println("${request.msg}")
 
-        val jedis = Jedis()
+        val jedis = Jedis(REDIS_HOST)
         val r = Result
             .newBuilder()
             .setStatus(Result.Status.Ok)
@@ -49,7 +50,7 @@ class Messaging : MessagingGrpc.MessagingImplBase() {
     }
 
     override fun receiveMsgs(request: ReceiveMsgsRequest, responseObserver: StreamObserver<ReceiveMsgsReply>) {
-        val jedis = Jedis()
+        val jedis = Jedis(REDIS_HOST)
         val user = request.user
         println("user ${user.name}")
 
