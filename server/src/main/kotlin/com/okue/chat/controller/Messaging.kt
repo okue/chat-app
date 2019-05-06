@@ -8,10 +8,14 @@ import com.okue.controller.Result
 import com.okue.controller.SendMsgReply
 import com.okue.controller.SendMsgRequest
 import io.grpc.stub.StreamObserver
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.lognet.springboot.grpc.GRpcService
 import redis.clients.jedis.Jedis
 import redis.clients.jedis.JedisPubSub
@@ -27,10 +31,11 @@ import redis.clients.jedis.JedisPubSub
 class Messaging : MessagingGrpc.MessagingImplBase() {
 
     val BROADCAST = "broadcast"
-    val REDIS_HOST = "redis_dev"
+    // val REDIS_HOST = "redis_dev"
+    val REDIS_HOST = "0.0.0.0"
 
     override fun sendMsg(request: SendMsgRequest, responseObserver: StreamObserver<SendMsgReply>) {
-        println("${request.msg}")
+        println("${request.msg} by ${Thread.currentThread().id}")
 
         val jedis = Jedis(REDIS_HOST)
         val r = Result
@@ -42,31 +47,41 @@ class Messaging : MessagingGrpc.MessagingImplBase() {
             .newBuilder()
             .setResult(r)
             .build()
-        GlobalScope.launch {
-            jedis.publish(BROADCAST.toByteArray(), request.msg.toByteArray())
+        runBlocking {
+            async {
+                jedis.publish(BROADCAST.toByteArray(), request.msg.toByteArray())
+            }.await()
+            responseObserver.onNext(reply)
+            responseObserver.onCompleted()
         }
-        responseObserver.onNext(reply)
-        responseObserver.onCompleted()
+    }
+
+    fun CoroutineScope.produceMsgs() = produce<ByteArray> {
+        val jedis = Jedis(REDIS_HOST)
+        val ch = Channel<ByteArray>()
+
+        GlobalScope.launch {
+            jedis.subscribe(Subscriber(ch), BROADCAST)
+            println("== stop to subscribe ==")
+        }
+
+        for (x in ch) {
+            send(x)
+        }
     }
 
     override fun receiveMsgs(request: ReceiveMsgsRequest, responseObserver: StreamObserver<ReceiveMsgsReply>) {
-        val jedis = Jedis(REDIS_HOST)
         val user = request.user
-        println("user ${user.name}")
+        println("user ${user.name} by ${Thread.currentThread().id}")
 
-        val ch = Channel<ByteArray>()
-
-        GlobalScope.async {
-            jedis.subscribe(Subscriber(ch), BROADCAST)
-        }
-
-        GlobalScope.launch {
-            for (m in ch) {
-                println("get message")
+        runBlocking {
+            val msgs = produceMsgs()
+            msgs.consumeEach {
+                println("get message ${Msg.parseFrom(it).content} by ${Thread.currentThread().id}")
 
                 val reply = ReceiveMsgsReply
                     .newBuilder()
-                    .setMsg(Msg.parseFrom(m))
+                    .setMsg(Msg.parseFrom(it))
                     .build()
 
                 responseObserver.onNext(reply)
@@ -75,11 +90,13 @@ class Messaging : MessagingGrpc.MessagingImplBase() {
         // responseObserver.onCompleted()
     }
 
-    inner class Subscriber(val ch : Channel<ByteArray>) : JedisPubSub() {
+    inner class Subscriber(val ch: Channel<ByteArray>) : JedisPubSub() {
         override fun onMessage(channel: String, message: String) {
-            println(this)
-            GlobalScope.launch {
-                ch.send(message.toByteArray())
+            runBlocking {
+                println("${this}, send, through ${ch} by ${Thread.currentThread().id}")
+                async {
+                    ch.send(message.toByteArray())
+                }
             }
         }
     }
