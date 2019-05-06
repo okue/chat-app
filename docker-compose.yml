@@ -20,7 +20,7 @@ services:
         volumes:
             - ./server:/app
         ports:
-            - "6565:6565"
-            - "8080:8080"
+            - "8000:8000" # http
+            - "6565:6565" # grpc
         links:
             - redis:redis_dev

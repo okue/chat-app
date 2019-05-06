@@ -2,6 +2,7 @@
 
 ## Run
 
-requirements:
-
-- redis
+```
+make build
+make run
+```
