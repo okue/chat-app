@@ -31,8 +31,8 @@ import redis.clients.jedis.JedisPubSub
 class Messaging : MessagingGrpc.MessagingImplBase() {
 
     val BROADCAST = "broadcast"
-    // val REDIS_HOST = "redis_dev"
-    val REDIS_HOST = "0.0.0.0"
+    val REDIS_HOST = "redis_dev"
+    // val REDIS_HOST = "0.0.0.0"
 
     override fun sendMsg(request: SendMsgRequest, responseObserver: StreamObserver<SendMsgReply>) {
         println("${request.msg} by ${Thread.currentThread().id}")
