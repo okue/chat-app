@@ -17,8 +17,10 @@ import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.lognet.springboot.grpc.GRpcService
+import org.springframework.beans.factory.annotation.Value
 import redis.clients.jedis.Jedis
 import redis.clients.jedis.JedisPubSub
+import java.util.logging.Logger
 
 // NOTE
 // https://github.com/LogNet/grpc-spring-boot-starter
@@ -31,11 +33,13 @@ import redis.clients.jedis.JedisPubSub
 class Messaging : MessagingGrpc.MessagingImplBase() {
 
     val BROADCAST = "broadcast"
-    val REDIS_HOST = "redis_dev"
-    // val REDIS_HOST = "0.0.0.0"
+
+    @Value("\${redis.host:'0.0.0.0'}")
+    lateinit var REDIS_HOST: String
 
     override fun sendMsg(request: SendMsgRequest, responseObserver: StreamObserver<SendMsgReply>) {
-        println("${request.msg} by ${Thread.currentThread().id}")
+        logger.info("${request.msg} by ${Thread.currentThread().id}")
+        logger.info(REDIS_HOST)
 
         val jedis = Jedis(REDIS_HOST)
         val r = Result
@@ -62,7 +66,7 @@ class Messaging : MessagingGrpc.MessagingImplBase() {
 
         GlobalScope.launch {
             jedis.subscribe(Subscriber(ch), BROADCAST)
-            println("== stop to subscribe ==")
+            logger.info("== stop to subscribe ==")
         }
 
         for (x in ch) {
@@ -72,12 +76,12 @@ class Messaging : MessagingGrpc.MessagingImplBase() {
 
     override fun receiveMsgs(request: ReceiveMsgsRequest, responseObserver: StreamObserver<ReceiveMsgsReply>) {
         val user = request.user
-        println("user ${user.name} by ${Thread.currentThread().id}")
+        logger.info("user ${user.name} by ${Thread.currentThread().id}")
 
         runBlocking {
             val msgs = produceMsgs()
             msgs.consumeEach {
-                println("get message ${Msg.parseFrom(it).content} by ${Thread.currentThread().id}")
+                logger.info("get message ${Msg.parseFrom(it).content} by ${Thread.currentThread().id}")
 
                 val reply = ReceiveMsgsReply
                     .newBuilder()
@@ -93,11 +97,15 @@ class Messaging : MessagingGrpc.MessagingImplBase() {
     inner class Subscriber(val ch: Channel<ByteArray>) : JedisPubSub() {
         override fun onMessage(channel: String, message: String) {
             runBlocking {
-                println("${this}, send, through ${ch} by ${Thread.currentThread().id}")
+                logger.info("${this}, send, through ${ch} by ${Thread.currentThread().id}")
                 async {
                     ch.send(message.toByteArray())
                 }
             }
         }
+    }
+
+    companion object {
+        val logger = Logger.getLogger(this::class.java.name)
     }
 }

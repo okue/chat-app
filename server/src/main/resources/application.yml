@@ -3,3 +3,6 @@ server:
 
 grpc:
     port: 6565
+
+redis:
+    host: "0.0.0.0"

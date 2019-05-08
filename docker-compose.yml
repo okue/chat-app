@@ -6,8 +6,6 @@ services:
             - "8081:8081"
         links:
             - server:server_dev
-        # extra_hosts:
-        #     - "server:$HOSTNAME" # You should write `.env`
 
     redis:
         image: redis
@@ -24,3 +22,5 @@ services:
             - "6565:6565" # grpc
         links:
             - redis:redis_dev
+        environment:
+            - REDIS_HOST=redis_dev
