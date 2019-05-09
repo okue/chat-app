@@ -21,6 +21,6 @@ services:
             - "8000:8000" # http
             - "6565:6565" # grpc
         links:
-            - redis:redis_dev
+            - redis:redis
         environment:
-            - REDIS_HOST=redis_dev
+            - REDIS_HOST=redis

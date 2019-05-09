@@ -7,15 +7,12 @@ import com.okue.controller.ReceiveMsgsRequest
 import com.okue.controller.Result
 import com.okue.controller.SendMsgReply
 import com.okue.controller.SendMsgRequest
+import com.okue.controller.User
+import io.grpc.stub.ServerCallStreamObserver
 import io.grpc.stub.StreamObserver
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.consumeEach
-import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.lognet.springboot.grpc.GRpcService
 import org.springframework.beans.factory.annotation.Value
 import redis.clients.jedis.Jedis
@@ -32,76 +29,66 @@ import java.util.logging.Logger
 @GRpcService
 class Messaging : MessagingGrpc.MessagingImplBase() {
 
-    val BROADCAST = "broadcast"
-
-    @Value("\${redis.host:'0.0.0.0'}")
+    @Value("\${redis.host}")
     lateinit var REDIS_HOST: String
 
     override fun sendMsg(request: SendMsgRequest, responseObserver: StreamObserver<SendMsgReply>) {
-        logger.info("${request.msg} by ${Thread.currentThread().id}")
-        logger.info(REDIS_HOST)
+        logger.info("${request.msg} by ${Thread.currentThread().name}")
 
         val jedis = Jedis(REDIS_HOST)
         val r = Result
             .newBuilder()
             .setStatus(Result.Status.Ok)
-            .setReason("")
-            .build()
         val reply = SendMsgReply
             .newBuilder()
             .setResult(r)
-            .build()
-        runBlocking {
-            async {
-                jedis.publish(BROADCAST.toByteArray(), request.msg.toByteArray())
-            }.await()
-            responseObserver.onNext(reply)
-            responseObserver.onCompleted()
-        }
-    }
-
-    fun CoroutineScope.produceMsgs() = produce<ByteArray> {
-        val jedis = Jedis(REDIS_HOST)
-        val ch = Channel<ByteArray>()
 
         GlobalScope.launch {
-            jedis.subscribe(Subscriber(ch), BROADCAST)
-            logger.info("== stop to subscribe ==")
+            logger.info("${request.msg} published by ${Thread.currentThread().name}")
+            jedis.publish(request.msg.to.name.toByteArray(), request.msg.toByteArray())
         }
-
-        for (x in ch) {
-            send(x)
-        }
+        responseObserver.onNext(reply.build())
+        responseObserver.onCompleted()
     }
 
     override fun receiveMsgs(request: ReceiveMsgsRequest, responseObserver: StreamObserver<ReceiveMsgsReply>) {
-        val user = request.user
-        logger.info("user ${user.name} by ${Thread.currentThread().id}")
+        val jedis = Jedis(REDIS_HOST)
+        logger.info("user ${request.user.name} by ${Thread.currentThread().id}")
 
-        runBlocking {
-            val msgs = produceMsgs()
-            msgs.consumeEach {
-                logger.info("get message ${Msg.parseFrom(it).content} by ${Thread.currentThread().id}")
-
-                val reply = ReceiveMsgsReply
-                    .newBuilder()
-                    .setMsg(Msg.parseFrom(it))
-                    .build()
-
-                responseObserver.onNext(reply)
-            }
+        val job = GlobalScope.launch {
+            logger.info("== start to subscribe ==")
+            jedis.subscribe(Subscriber(responseObserver), request.user.name)
+            logger.info("== stop to subscribe ==")
         }
-        // responseObserver.onCompleted()
+
+        (responseObserver as ServerCallStreamObserver).setOnCancelHandler {
+            logger.info("== job cancel ==")
+            // job.cancel()
+        }
     }
 
-    inner class Subscriber(val ch: Channel<ByteArray>) : JedisPubSub() {
+    inner class Subscriber(observer: StreamObserver<ReceiveMsgsReply>) : JedisPubSub() {
+
+        val obs = observer
+
         override fun onMessage(channel: String, message: String) {
-            runBlocking {
-                logger.info("${this}, send, through ${ch} by ${Thread.currentThread().id}")
-                async {
-                    ch.send(message.toByteArray())
+            logger.info("${Thread.currentThread().name} gets ${message} on ${channel}")
+            val reply =
+                try {
+                    ReceiveMsgsReply
+                        .newBuilder()
+                        .setMsg(Msg.parseFrom(message.toByteArray()))
+                } catch (e: Exception) {
+                    ReceiveMsgsReply
+                        .newBuilder()
+                        .setMsg(
+                            Msg.newBuilder()
+                                .setTo(User.newBuilder().setName("admin"))
+                                .setFrom(User.newBuilder().setName("admin"))
+                                .setContent("hoge is hoge")
+                        )
                 }
-            }
+            obs.onNext(reply.build())
         }
     }
 
