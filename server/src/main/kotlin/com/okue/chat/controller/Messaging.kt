@@ -7,7 +7,6 @@ import com.okue.controller.ReceiveMsgsRequest
 import com.okue.controller.Result
 import com.okue.controller.SendMsgReply
 import com.okue.controller.SendMsgRequest
-import com.okue.controller.User
 import io.grpc.stub.ServerCallStreamObserver
 import io.grpc.stub.StreamObserver
 import kotlinx.coroutines.CoroutineScope
@@ -73,22 +72,15 @@ class Messaging : MessagingGrpc.MessagingImplBase() {
 
         override fun onMessage(channel: String, message: String) {
             logger.info("${Thread.currentThread().name} gets ${message} on ${channel}")
-            val reply =
-                try {
+            try {
+                val reply =
                     ReceiveMsgsReply
                         .newBuilder()
                         .setMsg(Msg.parseFrom(message.toByteArray()))
-                } catch (e: Exception) {
-                    ReceiveMsgsReply
-                        .newBuilder()
-                        .setMsg(
-                            Msg.newBuilder()
-                                .setTo(User.newBuilder().setName("admin"))
-                                .setFrom(User.newBuilder().setName("admin"))
-                                .setContent("hoge is hoge")
-                        )
-                }
-            obs.onNext(reply.build())
+                obs.onNext(reply.build())
+            } catch (e: Exception) {
+                logger.warning("something bad happens")
+            }
         }
     }
 
