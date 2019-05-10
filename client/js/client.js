@@ -17,8 +17,8 @@ const myname = 'web-client-' + Math.random().toString(36).slice(-8)
 var app = Elm.Main.init({})
 app.ports.sendMsg.subscribe(function(arg){
     // gRPC sendMsg
-    const toName = arg[1]
-    const content = arg[2]
+    const toName = arg[0]
+    const content = arg[1]
     console.log(toName, content)
 
     const request = new SendMsgRequest()

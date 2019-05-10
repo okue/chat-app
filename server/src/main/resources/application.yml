@@ -6,3 +6,5 @@ grpc:
 
 redis:
     host: "0.0.0.0"
+
+kotlinx.coroutines.debug: true

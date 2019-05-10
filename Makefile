@@ -20,4 +20,4 @@ client:
 	cp client/${MAINJS} ${STATIC_DIR}
 
 server:
-	cd server/ && ./gradlew build
+	cd server/ && ./gradlew bootJar

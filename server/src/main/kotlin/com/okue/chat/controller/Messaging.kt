@@ -10,9 +10,9 @@ import com.okue.controller.SendMsgRequest
 import com.okue.controller.User
 import io.grpc.stub.ServerCallStreamObserver
 import io.grpc.stub.StreamObserver
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.lognet.springboot.grpc.GRpcService
 import org.springframework.beans.factory.annotation.Value
 import redis.clients.jedis.Jedis
@@ -43,27 +43,32 @@ class Messaging : MessagingGrpc.MessagingImplBase() {
             .newBuilder()
             .setResult(r)
 
-        GlobalScope.launch {
-            logger.info("${request.msg} published by ${Thread.currentThread().name}")
-            jedis.publish(request.msg.to.name.toByteArray(), request.msg.toByteArray())
+        runBlocking(Dispatchers.IO) {
+            this.launch {
+                jedis.publish(request.msg.to.name.toByteArray(), request.msg.toByteArray())
+                logger.info("${this.coroutineContext.toString()}")
+                logger.info("${request.msg} published by ${Thread.currentThread().name}")
+            }
+            responseObserver.onNext(reply.build())
+            responseObserver.onCompleted()
         }
-        responseObserver.onNext(reply.build())
-        responseObserver.onCompleted()
     }
 
     override fun receiveMsgs(request: ReceiveMsgsRequest, responseObserver: StreamObserver<ReceiveMsgsReply>) {
         val jedis = Jedis(REDIS_HOST)
         logger.info("user ${request.user.name} by ${Thread.currentThread().id}")
 
-        val job = GlobalScope.launch {
-            logger.info("== start to subscribe ==")
-            jedis.subscribe(Subscriber(responseObserver), request.user.name)
-            logger.info("== stop to subscribe ==")
+        val job = runBlocking(Dispatchers.IO) {
+            this.launch {
+                logger.info("== start to subscribe ==")
+                jedis.subscribe(Subscriber(responseObserver), request.user.name)
+                logger.info("== stop to subscribe ==")
+            }
         }
 
         (responseObserver as ServerCallStreamObserver).setOnCancelHandler {
             logger.info("== job cancel ==")
-            // job.cancel()
+            job.cancel()
         }
     }
 
