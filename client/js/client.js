@@ -10,11 +10,17 @@ grpc.web = require('grpc-web')
 const client = new MessagingClient('http://'+window.location.hostname+':8081', null, null)
 
 // random string
-const myname = 'web-client-' + Math.random().toString(36).slice(-8)
+var myname = (new URLSearchParams(window.location.search)).get('name')
+if (myname === null) {
+    myname = "no_name_man"
+}
+console.log("my name is", myname)
 
 // Elm -------------------------------------------------------------------------
 
-var app = Elm.Main.init({})
+var app = Elm.Main.init(
+    {flags: {myname: myname}}
+)
 app.ports.sendMsg.subscribe(function(arg){
     // gRPC sendMsg
     const toName = arg[0]
@@ -63,10 +69,9 @@ stream.on('data', function(response) {
     )
 })
 stream.on('status', function(status) {
-    console.log(status.code)
-    console.log(status.details)
-    console.log(status.metadata)
+    console.log(status)
 })
 stream.on('end', function(end) {
     // stream end signal
+    console.log(end)
 })
