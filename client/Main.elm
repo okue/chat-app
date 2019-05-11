@@ -1,26 +1,11 @@
 port module Main exposing (main)
 
-import Bootstrap.Button as Button
-import Bootstrap.CDN as CDN
-import Bootstrap.Card as Card
-import Bootstrap.Card.Block as Block
-import Bootstrap.Grid as Grid
-import Bootstrap.Grid.Col as Col
-import Bootstrap.Grid.Row as Row
-import Bootstrap.ListGroup as Listgroup
-import Bootstrap.Modal as Modal
 import Bootstrap.Table as Table
-import Bootstrap.Text as Text
-import Bootstrap.Utilities.Border as Border
-import Bootstrap.Utilities.Flex as Flex
-import Bootstrap.Utilities.Spacing as Spacing
-import Browser exposing (UrlRequest)
+import Browser
 import Browser.Dom as Dom
-import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
-import Maybe exposing (Maybe, andThen, withDefault)
 
 
 
