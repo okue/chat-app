@@ -8,9 +8,8 @@ import com.okue.controller.ReceiveMsgsRequest
 import com.okue.controller.Result
 import com.okue.controller.SendMsgReply
 import com.okue.controller.SendMsgRequest
+import io.grpc.stub.ServerCallStreamObserver
 import io.grpc.stub.StreamObserver
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.lognet.springboot.grpc.GRpcService
@@ -53,22 +52,24 @@ class Messaging : MessagingGrpc.MessagingImplBase() {
             .setResult(r)
         val channelName = request.msg.to.name.let { toChannelName(it) }
 
-        CoroutineScope(Dispatchers.IO).launch {
-            jedis.publish(channelName, request.msg.toByteArray())
-            logger.info(
-                "from ${request.msg.from.name} "
-                        + "to ${request.msg.to.name} "
-                        + "content ${request.msg.content} "
-                        + "published by ${Thread.currentThread().name}"
-            )
-        }
+        jedis.publish(channelName, request.msg.toByteArray())
+        logger.info(
+            "from ${request.msg.from.name} "
+                    + "to ${request.msg.to.name} "
+                    + "content ${request.msg.content} "
+                    + "published by ${Thread.currentThread().name}"
+        )
         responseObserver.onNext(reply.build())
         responseObserver.onCompleted()
     }
 
     override fun receiveMsgs(request: ReceiveMsgsRequest, responseObserver: StreamObserver<ReceiveMsgsReply>) {
         logger.info("user ${request.user.name} by ${Thread.currentThread().id}")
-        Observers.put(request.user.name, responseObserver)
+        val userName = request.user.name
+        Observers.put(userName, responseObserver)
+        (responseObserver as ServerCallStreamObserver).setOnCancelHandler {
+            Observers.del(userName)
+        }
     }
 
 }

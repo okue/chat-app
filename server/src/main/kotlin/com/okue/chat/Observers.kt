@@ -17,4 +17,8 @@ object Observers {
     fun put(name: String, observer: StreamObserver<ReceiveMsgsReply>) {
         this.map.put(name, observer)
     }
+
+    fun del(name: String) {
+        this.map.remove(name)
+    }
 }
