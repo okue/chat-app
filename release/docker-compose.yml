@@ -15,8 +15,6 @@ services:
 
     server:
         image: okue/chat-app-server
-        volumes:
-            - ./server:/app
         ports:
             - "8000:8000" # http
             - "6565:6565" # grpc
