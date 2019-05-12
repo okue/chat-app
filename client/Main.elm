@@ -1,5 +1,9 @@
 port module Main exposing (main)
 
+import Bootstrap.Button as Button
+import Bootstrap.Form as Form
+import Bootstrap.Form.Input as Input
+import Bootstrap.Grid.Col as Col
 import Bootstrap.Table as Table
 import Browser
 import Browser.Dom as Dom
@@ -145,7 +149,8 @@ subscriptions model =
 
 mainBody : Model -> List (Html Msg)
 mainBody model =
-    [ textBox model
+    [ h2 [] [ text <| model.myname ++ "のチャット" ]
+    , textForm model
     , msgTable model
     ]
 
@@ -176,15 +181,19 @@ msgTable model =
         )
 
 
-textBox : Model -> Html Msg
-textBox model =
-    div []
-        [ viewInput "text" "to" model.currentTo ChangedTo
-        , viewInput "text" "content" model.currentContent ChangedContent
-        , button [ onClick ClickedPost ] [ text "post" ]
+textForm : Model -> Html Msg
+textForm model =
+    Form.formInline []
+        [ viewInput "to" model.currentTo ChangedTo
+        , viewInput "content" model.currentContent ChangedContent
+        , Button.button [ Button.primary ] [ text "Post" ]
         ]
 
 
-viewInput : String -> String -> String -> (String -> msg) -> Html msg
-viewInput t p v toMsg =
-    input [ type_ t, placeholder p, value v, onInput toMsg ] []
+viewInput : String -> String -> (String -> msg) -> Html msg
+viewInput p v toMsg =
+    Input.text
+        [ Input.value v
+        , Input.onInput toMsg
+        , Input.placeholder p
+        ]
