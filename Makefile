@@ -21,3 +21,7 @@ client:
 
 server:
 	cd server/ && ./gradlew bootJar
+
+pushImages: build
+	docker push okue/chat-app-server
+	docker push okue/chat-app-proxy
