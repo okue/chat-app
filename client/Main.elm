@@ -3,6 +3,7 @@ port module Main exposing (main)
 import Bootstrap.Button as Button
 import Bootstrap.Form as Form
 import Bootstrap.Form.Input as Input
+import Bootstrap.Grid as Grid
 import Bootstrap.Grid.Col as Col
 import Bootstrap.Table as Table
 import Browser
@@ -99,7 +100,7 @@ init flags =
 view : Model -> Browser.Document Msg
 view model =
     { title = model.myname ++ "のチャット"
-    , body = mainBody model
+    , body = [ mainBody model ]
     }
 
 
@@ -147,12 +148,13 @@ subscriptions model =
 -------------------------------------------------------------------------------
 
 
-mainBody : Model -> List (Html Msg)
+mainBody : Model -> Html Msg
 mainBody model =
-    [ h2 [] [ text <| model.myname ++ "のチャット" ]
-    , textForm model
-    , msgTable model
-    ]
+    Grid.container []
+        [ h2 [] [ text <| model.myname ++ "のチャット" ]
+        , textForm model
+        , msgTable model
+        ]
 
 
 msgTable model =
@@ -183,10 +185,18 @@ msgTable model =
 
 textForm : Model -> Html Msg
 textForm model =
-    Form.formInline []
-        [ viewInput "to" model.currentTo ChangedTo
-        , viewInput "content" model.currentContent ChangedContent
-        , Button.button [ Button.primary ] [ text "Post" ]
+    Grid.container []
+        [ Grid.row []
+            [ Grid.col [ Col.md3, Col.xs3 ] [ viewInput "to" model.currentTo ChangedTo ]
+            , Grid.col [ Col.md7, Col.xs12 ] [ viewInput "content" model.currentContent ChangedContent ]
+            , Grid.col [ Col.md2, Col.lg2 ]
+                [ Button.button
+                    [ Button.primary
+                    , Button.attrs [ onClick ClickedPost ]
+                    ]
+                    [ text "Post" ]
+                ]
+            ]
         ]
 
 
